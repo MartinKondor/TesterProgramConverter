@@ -90,7 +90,7 @@ function App() {
       const portNames = line.split("-");
       let group = [];
       for (let portName of portNames) {
-        group.push(table.table[portName]);
+        group.push(table.tableAda[portName]);
       }
       groups.push(group);
     }
