@@ -1,6 +1,93 @@
+import table from './table.json';
+
+
+function invertTable(table) {
+    let newt = {};
+    let keys = Object.keys(table);
+    for (let key of keys) {
+        newt[table[key]] = key;
+    }
+    return newt;
+}
+
+function getFileContents(lines, maxPortN) {
+    let files = [];
+    let filesNumbers = [];
+    let filesParity = [];
+    let filesZarlatokSzama = [];
+
+    for (let i = 0; i < maxPortN; i++) {
+        files.push("");
+        filesNumbers.push({});
+        filesParity.push(64);
+        filesZarlatokSzama.push(0);
+    }
+
+    for (let line of lines) {
+        let parts = line.split("-");
+        let biggest = 0;
+        let currNumbers = [];
+        let zarlatSzam = 256;
+        let currfilesParity = 64;
+
+        for (let part of parts) {
+            let portName = parseInt(part.substring(1, line.length));
+            if (portName > biggest) {
+                biggest = portName;
+            }
+            if (zarlatSzam > table.table[part]) {
+                zarlatSzam = table.table[part];
+            }
+            if (table.table[part] > 128) {
+                currfilesParity = 128;
+            }
+            currNumbers.push(table.table[part]);
+        }
+
+        let fileIndex = parseInt(biggest / 64);
+        filesParity[fileIndex] = currfilesParity;
+
+        for (let n of currNumbers) {
+            filesNumbers[fileIndex][n] = zarlatSzam;
+        }
+        
+        filesZarlatokSzama[fileIndex] = zarlatSzam;
+        // files[fileIndex].push();
+    }
+
+    for (let j = 0; j < files.length; j++) {
+        let outputStr = filesParity[j]===64?"64\n":"128\n";
+        outputStr += `${filesZarlatokSzama[j]}\n`;
+    
+        for (let i = 0; i < filesParity[j]; i++) {
+          if (Object.keys(filesNumbers[j]).includes(String(i))) {
+            outputStr += String(filesNumbers[j][i]) + "\n";
+          }
+          else {
+            outputStr += String(i) + "\n";
+          }
+        }
+
+        files[j] = outputStr;
+    }
+
+    return files;
+}
 
 export function KTXPrep(groups, lines) {
     let maxPortN = 0;
+    let maxN = 0;
+
+    for (let group of groups) {
+        for (let n of group) {
+            if (n > maxN) {
+                maxN = n;
+                maxPortN = parseInt(n/64);
+            }
+        }
+    }
+    
+    /*
     let files = {0:[],1:[]};
     let fn = 0;
     let mfn = 0;
@@ -11,7 +98,7 @@ export function KTXPrep(groups, lines) {
             let n = parseInt(portName.substring(1, portName.length));
             fn = parseInt(n/64);
             if (fn > maxPortN) {
-                maxPortN = n%64;
+                maxPortN = fn;
             }
             if (fn > mfn) {
                 mfn = fn;
@@ -30,11 +117,11 @@ export function KTXPrep(groups, lines) {
             files[String(mfn)] = [prepg];
         }
     }
-
-    console.log(files);
+    */
 
     return {
         "groups": groups,
+        "fileContents": getFileContents(lines, maxPortN),
         "filen": maxPortN
     };
 }
