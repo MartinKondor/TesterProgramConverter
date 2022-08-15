@@ -6,14 +6,16 @@ import { KTX, KTXPrep } from './KTX';
 
 
 function App() {
-  //const [input, setInput] = useState("A1-C1\nA32-C32\nA2-A4-C2\nA3-A5\nA66-A67");
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState("A1-C1\nA32-C32\nA2-A4-C2\nA3-A5");
+  //const [input, setInput] = useState("A1-C1\nA32-C32\n");
   const [output, setOutput] = useState("");
   const [outputAda, setOutputAda] = useState("");
   const [ktxContent, setKtxContent] = useState("");
   const [radioBoxes, setRadioBoxes] = useState(0);
   const [checkRadioBoxes, setCheckRadioBoxes] = useState([]);
   const [fileContents, setFileContents] = useState([]);
+  const [outputWriteableAda, setOutputWriteableAda] = useState(false);
+
   let is64 = true;
   let zarlatokSzama = 0;
 
@@ -22,6 +24,12 @@ function App() {
   }
 
   function convert({ target }) {
+    setRadioBoxes(0);
+    setCheckRadioBoxes([]);
+    setFileContents([]);
+    setOutputAda("");
+    setOutputWriteableAda(false);
+
     const lines = input.split("\n");
     const numbers = {
       // "i": legissebb zárlat szám
@@ -87,6 +95,8 @@ function App() {
   }
 
   function conovertAda({ target }) {
+    setOutputWriteableAda(true);
+
     let groups = [];
     const lines = input.split("\n");
 
@@ -151,13 +161,15 @@ function App() {
 
   // When a radiobox is checked
   useEffect(function () {
-    let i = 0;
-    for (; i < checkRadioBoxes.length; i++) {
-      if (checkRadioBoxes[i] == "checked") {
-        break;
+    if (checkRadioBoxes.length !== 0) {
+      let i = 0;
+      for (; i < checkRadioBoxes.length; i++) {
+        if (checkRadioBoxes[i] == "checked") {
+          break;
+        }
       }
+      setOutput(fileContents[i]);
     }
-    setOutput(fileContents[i]);
   }, [checkRadioBoxes])
 
   return (
@@ -195,7 +207,11 @@ function App() {
           </div>
           <div className="col-sm">
             <h4>Adaptronic Teszterhez</h4>
-            <textarea className="form-control mb-3" cols={8} rows={16} value={outputAda} onChange={e=>handleChange(e,outputAda,setOutputAda)} />
+            {outputWriteableAda?
+            <textarea className="form-control mb-3 disabled" cols={8} rows={16} value={outputAda} onChange={e=>handleChange(e,outputAda,setOutputAda)} />
+            :
+            <textarea className="form-control mb-3 disabled" cols={8} rows={16} value={outputAda} onChange={e=>handleChange(e,outputAda,setOutputAda)} disabled />
+            }
             <button className="btn btn-block font-weight-bold btn-success" onClick={downloadAda}>Mentés</button>
           </div>
         </div>

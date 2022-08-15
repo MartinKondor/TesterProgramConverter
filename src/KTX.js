@@ -25,6 +25,11 @@ function getFileContents(lines, maxPortN) {
 
     for (let line of lines) {
         let parts = line.split("-");
+
+        if (parts.length < 2) {
+            continue;
+        }
+
         let biggest = 0;
         let currNumbers = [];
         let zarlatSzam = 256;
@@ -74,9 +79,37 @@ function getFileContents(lines, maxPortN) {
     return files;
 }
 
+function isChangeAbleN(n) {
+    return (n%128 === 65) || (n%128 === 66);
+}
+
+function reverseGroup(_group) {
+    let group = [..._group];
+    let changeIndex = null;
+
+    console.log(group);
+    
+    for (let i = 0; i < group.length; i++) {
+        if (isChangeAbleN(group[i]) && changeIndex !== null) {
+            let temp = group[i];
+            group[i] = group[changeIndex];
+            group[changeIndex] = temp;
+            changeIndex = null;
+        }
+        else if (isChangeAbleN(group[i])) {
+            changeIndex = i;
+        }
+    }
+
+    console.log(group);
+
+    return group;
+}
+
 export function KTXPrep(groups, lines) {
     let maxPortN = 0;
     let maxN = 0;
+    let newGroups = [];
 
     for (let group of groups) {
         for (let n of group) {
@@ -85,6 +118,8 @@ export function KTXPrep(groups, lines) {
                 maxPortN = parseInt(n/64);
             }
         }
+
+        newGroups.push(reverseGroup(group));
     }
     
     /*
@@ -120,7 +155,7 @@ export function KTXPrep(groups, lines) {
     */
 
     return {
-        "groups": groups,
+        "groups": newGroups,
         "fileContents": getFileContents(lines, maxPortN),
         "filen": maxPortN
     };
