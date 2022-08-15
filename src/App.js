@@ -6,7 +6,7 @@ import { KTX, KTXPrep } from './KTX';
 
 
 function App() {
-  const [input, setInput] = useState("A1-C1\nA32-C32\nA2-A4-C2\nA3-A5");
+  const [input, setInput] = useState("A1-C1\nA32-C32\nA2-A4-C2\nA3-A5\nA65-C70\nA43-C43\n");
   //const [input, setInput] = useState("A1-C1\nA32-C32\n");
   const [output, setOutput] = useState("");
   const [outputAda, setOutputAda] = useState("");
@@ -30,51 +30,104 @@ function App() {
     setOutputAda("");
     setOutputWriteableAda(false);
 
-    const lines = input.split("\n");
-    const numbers = {
-      // "i": legissebb zárlat szám
-    };
+    /////////////////////////////////////////////////
+    let numberOfFiles = 5;
+    let files = [];
+    let filesNumbers = [];
+    let filesParity = [];
+    let filesZarlatokSzama = [];
+    let groups = [];
 
-    for (const line of lines) {
-      try {
-        const portNames = line.split("-");
-        zarlatokSzama += portNames.length - 1;
-        let currNumbers = [];
-        let zarlatSzam = 256;
+    for (let i = 0; i < numberOfFiles; i++) {
+        files.push("");
+        filesNumbers.push({});
+        filesParity.push(64);
+        filesZarlatokSzama.push(0);
+    }
 
-        for (const portName of portNames) {
-          if (table.table[portName] > 128) {
-            is64 = false;
-          }
-          if (zarlatSzam > table.table[portName]) {
-            zarlatSzam = table.table[portName];
-          }
-          currNumbers.push(table.table[portName]);
-        }
+    const lines = input.toUpperCase().split("\n");
 
-        for (let n of currNumbers) {
-          numbers[n] = zarlatSzam;
-        }
-
+    for (let line of lines) {
+      let parts = line.split("-");
+      if (parts.length < 2) {
+        continue;
       }
-      catch (e) {
-        alert("Probléma a bemenettel:\n" + e);
+
+      let biggest = 0;
+      let currNumbers = [];
+      let currfilesParity = 64;
+
+      for (let part of parts) {
+        if (biggest < parseInt(part.substring(1,part.length))) {
+          biggest = parseInt(part.substring(1,part.length));
+        }
+      }
+
+      let fileIndex = parseInt(biggest / 64);
+
+      for (let part of parts) {
+        if (parseInt(part.substring(1,part.length)) > 32) {
+            currfilesParity = 128;
+        }
+        currNumbers.push(table.table[part] - (fileIndex*64));
+      }
+
+      filesParity[fileIndex] = currfilesParity - (fileIndex*64);
+
+      let zarlatSzam = currNumbers[0];
+      for (let n of currNumbers) {
+        if (n < zarlatSzam) {
+          zarlatSzam = n;
+        }
+      }
+
+      let counter = 0;
+      for (let n of currNumbers) {
+
+          // Kivonás a többi fájlból
+          filesNumbers[fileIndex][String(n - (fileIndex*64))] = zarlatSzam - (fileIndex*64);
+          counter += 1;
+      }
+      filesZarlatokSzama[fileIndex] += parts.length - 1;
+      groups.push(currNumbers);
+    }
+
+    for (let j = 0; j < files.length; j++) {
+        let outputStr = filesParity[j]===64 ? "64\n" : "128\n";
+        outputStr += `${filesZarlatokSzama[j]}\n`;
+
+        for (let i = 0; i < filesParity[j]; i++) {
+          if (Object.keys(filesNumbers[j]).includes(String(i))) {
+            outputStr += String(filesNumbers[j][String(i)]) + "\n";
+          }
+          else {
+            outputStr += String(i) + "\n";
+          }
+        }
+
+        files[j] = outputStr;
+    }
+    
+    let counter = 0;
+    for (let i = 0; i < numberOfFiles; i++) {
+      if (filesZarlatokSzama[i] !== 0) {
+        counter += 1;
       }
     }
 
-    let outputStr = is64?"64\n":"128\n";
-    outputStr += `${zarlatokSzama}\n`;
+    files = files.slice(0, counter);
 
-    for (let i = 0; i < (is64?64:128); i++) {
-      if (Object.keys(numbers).includes(String(i))) {
-        outputStr += String(numbers[i]) + "\n";
-      }
-      else {
-        outputStr += String(i) + "\n";
-      }
+    let crb = [];
+    for (let i = 0; i < counter; i++) {
+      crb.push("");
     }
+    crb[0] = "checked";
+    setCheckRadioBoxes(crb);
 
-    setOutput(outputStr);
+    setRadioBoxes(counter);
+    setOutput(files[0]);
+    setFileContents(files);
+    return groups;
   }
 
   function download({ target }) {
@@ -95,6 +148,27 @@ function App() {
   }
 
   function conovertAda({ target }) {
+    setOutputWriteableAda(true);
+    convert({target:target});
+  
+    const lines = input.toUpperCase().split("\n");
+    let groups = [];
+
+    for (let line of lines) {
+      const portNames = line.split("-");
+      let group = [];
+      for (let portName of portNames) {
+        group.push(table.tableAda[portName]);
+      }
+      groups.push(group);
+    }
+
+    const prep = KTXPrep(groups, lines);
+    const content = KTX(null, prep["groups"]);
+    setKtxContent(content);
+    setOutputAda(content);
+
+    /*
     setOutputWriteableAda(true);
 
     let groups = [];
@@ -125,6 +199,7 @@ function App() {
     const content = KTX(null, prep["groups"]);
     setKtxContent(content);
     setOutputAda(content);
+    */
   }
 
   function handleCheckbox({ target }, i) {    

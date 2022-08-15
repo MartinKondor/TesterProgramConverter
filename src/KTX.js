@@ -14,9 +14,10 @@ function getFileContents(lines, maxPortN) {
     let files = [];
     let filesNumbers = [];
     let filesParity = [];
-    let filesZarlatokSzama = [];
+    let filesZarlatokSzama = [];    
+    let numberOfFiles = 10;
 
-    for (let i = 0; i < maxPortN; i++) {
+    for (let i = 0; i < numberOfFiles; i++) {
         files.push("");
         filesNumbers.push({});
         filesParity.push(64);
@@ -25,23 +26,18 @@ function getFileContents(lines, maxPortN) {
 
     for (let line of lines) {
         let parts = line.split("-");
-
         if (parts.length < 2) {
             continue;
         }
 
         let biggest = 0;
         let currNumbers = [];
-        let zarlatSzam = 256;
         let currfilesParity = 64;
 
         for (let part of parts) {
             let portName = parseInt(part.substring(1, line.length));
-            if (portName > biggest) {
+            if (biggest < portName) {
                 biggest = portName;
-            }
-            if (zarlatSzam > table.table[part]) {
-                zarlatSzam = table.table[part];
             }
             if (table.table[part] > 128) {
                 currfilesParity = 128;
@@ -50,13 +46,15 @@ function getFileContents(lines, maxPortN) {
         }
 
         let fileIndex = parseInt(biggest / 64);
-        filesParity[fileIndex] = currfilesParity;
+        filesParity[fileIndex] = currfilesParity - (fileIndex*64);
 
+        let zarlatSzam = currNumbers.sort()[0];
+        let counter = 0;
         for (let n of currNumbers) {
             filesNumbers[fileIndex][n] = zarlatSzam;
+            counter += 1;
         }
-        
-        filesZarlatokSzama[fileIndex] = zarlatSzam;
+        filesZarlatokSzama[fileIndex] += counter;
         // files[fileIndex].push();
     }
 
@@ -76,7 +74,14 @@ function getFileContents(lines, maxPortN) {
         files[j] = outputStr;
     }
 
-    return files;
+    let counter = 0;
+    for (let i = 0; i < numberOfFiles; i++) {
+      if (filesZarlatokSzama[i] !== 0) {
+        counter += 1;
+      }
+    }
+
+    return files.slice(0, counter);
 }
 
 function isChangeAbleN(n) {
@@ -86,8 +91,19 @@ function isChangeAbleN(n) {
 function reverseGroup(_group) {
     let group = [..._group];
     let changeIndex = null;
+    let thereWasAChange = false;
 
-    console.log(group);
+    function reverseArr(input) {
+        var ret = new Array;
+        for(var i = input.length-1; i >= 0; i--) {
+            ret.push(input[i]);
+        }
+        return ret;
+    }
+
+    function sortArr(input) {
+        return input.sort();
+    }
     
     for (let i = 0; i < group.length; i++) {
         if (isChangeAbleN(group[i]) && changeIndex !== null) {
@@ -95,14 +111,21 @@ function reverseGroup(_group) {
             group[i] = group[changeIndex];
             group[changeIndex] = temp;
             changeIndex = null;
+            thereWasAChange = true;
         }
         else if (isChangeAbleN(group[i])) {
             changeIndex = i;
         }
+
     }
 
-    console.log(group);
-
+    if (thereWasAChange) {
+        if (group[0] - group[1] < 0) {
+            group = reverseArr(group);
+        }
+    } else {
+        group = sortArr(group);
+    }
     return group;
 }
 
