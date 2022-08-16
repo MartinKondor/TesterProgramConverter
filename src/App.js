@@ -48,6 +48,10 @@ function App() {
     const lines = input.toUpperCase().split("\n");
 
     for (let line of lines) {
+      if (line.trim().length == 0) {
+        continue;
+      }
+
       let parts = line.split("-");
       if (parts.length < 2) {
         continue;
@@ -155,6 +159,10 @@ function App() {
     let groups = [];
 
     for (let line of lines) {
+      if (line.trim().length == 0) {
+        continue;
+      }
+
       const portNames = line.split("-");
       let group = [];
       for (let portName of portNames) {
@@ -165,41 +173,9 @@ function App() {
 
     const prep = KTXPrep(groups, lines);
     const content = KTX(null, prep["groups"]);
-    setKtxContent(content);
+    setKtxContent(content);  // Undefined on the end
     setOutputAda(content);
-
-    /*
     setOutputWriteableAda(true);
-
-    let groups = [];
-    const lines = input.split("\n");
-
-    for (let line of lines) {
-      const portNames = line.split("-");
-      let group = [];
-      for (let portName of portNames) {
-        group.push(table.tableAda[portName]);
-      }
-      groups.push(group);
-    }
-    
-    const prep = KTXPrep(groups, lines);
-
-    // Create file checkboxes
-    setRadioBoxes(prep["filen"]);
-    let crb = [];
-    for (let i = 0; i < prep["filen"]; i++) {
-      crb.push("");
-    }
-    crb[0] = "checked";
-    setCheckRadioBoxes(crb);
-
-    setFileContents(prep["fileContents"]);
-
-    const content = KTX(null, prep["groups"]);
-    setKtxContent(content);
-    setOutputAda(content);
-    */
   }
 
   function handleCheckbox({ target }, i) {    
@@ -272,10 +248,10 @@ function App() {
           <div className="col-sm">
             <h4>Hagyományos Teszterhez</h4>
             <textarea className="form-control mb-3" cols={8} rows={16} value={output} onChange={e=>handleChange(e,output,setOutput)} />
-            <div className="row">{(Array.from(Array(radioBoxes).keys())).map((e, i) => (
+            <div className="row mb-3">{(Array.from(Array(radioBoxes).keys())).map((e, i) => (
               <div className="col-sm" key={i+1000}>
-                <input name={"r" + i} key={i} type="radio" checked={checkRadioBoxes[i]} onChange={e=>handleCheckbox(e,i)} />
-                <label className="ml-1" key={i+100}>{i+1}. fájl</label>
+                <input id={"id-" + i} className="form-check-input" name={"r" + i} key={i} type="radio" checked={checkRadioBoxes[i]} onChange={e=>handleCheckbox(e,i)} />
+                <label htmlFor={"id-" + i} className="form-check-label ml-1 font-weight-bold" key={i+100}>{i+1}. fájl</label>
               </div>
             ))}</div>
             <button className="btn btn-block font-weight-bold btn-success" onClick={download}>Mentés</button>
