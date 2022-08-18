@@ -7,7 +7,15 @@ import { KTX, KTXPrep } from './KTX';
 
 function App() {
   const [input, setInput] = useState("A1-C1\nA32-C32\nA2-A4-C2\nA3-A5\nA65-C70\nA43-C43\n");
+  const [inputCorr, setInputCorr] = useState("");
   //const [input, setInput] = useState("A1-C1\nA32-C32\n");
+  
+  const [saveState, setSaveState] = useState({
+    input: "",
+    outputAda: "",
+    fileContents: []  // outputs
+  });
+
   const [output, setOutput] = useState("");
   const [outputAda, setOutputAda] = useState("");
   const [ktxContent, setKtxContent] = useState("");
@@ -131,6 +139,7 @@ function App() {
     setRadioBoxes(counter);
     setOutput(files[0]);
     setFileContents(files);
+    setSaveState({...saveState, fileContents: files});
     return groups;
   }
 
@@ -159,7 +168,7 @@ function App() {
     let groups = [];
 
     for (let line of lines) {
-      if (line.trim().length == 0) {
+      if (line.trim().length === 0) {
         continue;
       }
 
@@ -173,16 +182,17 @@ function App() {
 
     const prep = KTXPrep(groups, lines);
     const content = KTX(null, prep["groups"]);
-    setKtxContent(content);  // Undefined on the end
+    setKtxContent(content);
     setOutputAda(content);
     setOutputWriteableAda(true);
+    setSaveState({...saveState, outputAda: content});
   }
 
-  function handleCheckbox({ target }, i) {    
+  function handleCheckbox({ target }, i) {
     let a = [...checkRadioBoxes];
     
     for (let j = 0; j < checkRadioBoxes.length; j++) {
-      if (j != i && checkRadioBoxes[j] == "checked") {
+      if (j != i && checkRadioBoxes[j] === "checked") {
         a[j] = "";
         break;
       }
@@ -211,17 +221,70 @@ function App() {
   }
 
   // When a radiobox is checked
-  useEffect(function () {
+  useEffect(() => {
     if (checkRadioBoxes.length !== 0) {
       let i = 0;
       for (; i < checkRadioBoxes.length; i++) {
-        if (checkRadioBoxes[i] == "checked") {
+        if (checkRadioBoxes[i] === "checked") {
           break;
         }
       }
       setOutput(fileContents[i]);
     }
   }, [checkRadioBoxes])
+
+  useEffect(() => {
+    if (saveState["input"].length === 0) {
+      setSaveState({...saveState, input: input});
+    }
+  }, [input]);
+
+  function checkEdit() {
+    
+  }
+
+  function checkEditAda() {
+
+    // Invert the ada table
+    let invAda = {};
+    for (let key of Object.keys(table.tableAda)) {
+      invAda[table.tableAda[key]] = key;
+    }
+
+    let isAt = false;
+    let counter = 0;
+    let globalPorts = [];
+
+    for (let line of outputAda.split("\n")) {
+      if (line[0] === "@") {
+        isAt = true;
+        continue;
+      }
+      if (isAt) {
+        ++counter;
+      }
+      if (isAt && counter === 2) {
+        let ports = [];
+        let parts = line.split(" ");
+
+        for (let part of parts) {
+          if (part.replace('"', "").trim().length === 0) {
+            continue;
+          }
+
+          let a = invAda[parseInt(part.replace('"', ""))];
+          ports.push(a);
+        }
+
+        globalPorts.push(ports.join("-"));
+        counter = 0;
+        isAt = false;
+      }
+    }
+
+    setInputCorr(globalPorts.join("\n"));
+  }
+
 
   return (
     <div className="App">
@@ -255,17 +318,35 @@ function App() {
               </div>
             ))}</div>
             <button className="btn btn-block font-weight-bold btn-success" onClick={download}>Mentés</button>
+            <button className="btn btn-block font-weight-bold btn-outline-info" onClick={checkEdit}>Módosítás</button>
           </div>
           <div className="col-sm">
             <h4>Adaptronic Teszterhez</h4>
             {outputWriteableAda?
-            <textarea className="form-control mb-3 disabled" cols={8} rows={16} value={outputAda} onChange={e=>handleChange(e,outputAda,setOutputAda)} />
+            <div>
+              <textarea className="form-control mb-3 disabled" cols={8} rows={16} value={outputAda} onChange={e=>handleChange(e,outputAda,setOutputAda)} />
+              <button className="btn btn-block font-weight-bold btn-success" onClick={downloadAda}>Mentés</button>
+              <button className="btn btn-block font-weight-bold btn-outline-info" onClick={checkEditAda}>Módosítás</button>
+            </div>
             :
-            <textarea className="form-control mb-3 disabled" cols={8} rows={16} value={outputAda} onChange={e=>handleChange(e,outputAda,setOutputAda)} disabled />
+            <div>
+              <textarea className="form-control mb-3 disabled" cols={8} rows={16} value={outputAda} onChange={e=>handleChange(e,outputAda,setOutputAda)} disabled />
+              <button className="btn btn-block font-weight-bold btn-success" onClick={downloadAda} disabled>Mentés</button>
+              <button className="btn btn-block font-weight-bold btn-outline-info" onClick={checkEditAda} disabled>Módosítás Ellenőrzése</button>
+            </div>
             }
-            <button className="btn btn-block font-weight-bold btn-success" onClick={downloadAda}>Mentés</button>
           </div>
         </div>
+
+        {inputCorr.length!==0?
+          <div className="row mt-5">
+            <div className="col-sm">
+              <h4>Javított Bemenet</h4>
+              <textarea className="form-control mb-3" cols={8} rows={inputCorr.split("\n").length} value={inputCorr} disabled />
+            </div>
+          </div>
+        :null}
+
       </main>
 
       <footer className="mt-5 pt-4 pb-4 bg-info text-white">
