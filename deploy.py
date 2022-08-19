@@ -1,7 +1,7 @@
 import os
 
 
-#os.system("npm run build")
+os.system("npm run build")
 
 with open("build/index.html", "r") as file:
     content = ">\n".join(file.read().split(">"))

@@ -102,6 +102,8 @@ function App() {
       }
       filesZarlatokSzama[fileIndex] += parts.length - 1;
       groups.push(currNumbers);
+
+      //console.log(groups);
     }
 
     for (let j = 0; j < files.length; j++) {
@@ -239,8 +241,49 @@ function App() {
     }
   }, [input]);
 
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////////
   function checkEdit() {
-    
+
+    let invTable = {};
+    for (let key of Object.keys(table.table)) {
+      invTable[table.table[key]] = key;
+    }
+
+    let file_index = -1;
+    let SSS = "";
+
+    for (let fc of fileContents) {
+      file_index += 1;
+      let lines = fc.split("\n");
+      let numbers = {};
+
+      for (let i = 2; i < lines.length; i++) {
+        if (!Object.keys(numbers).includes(lines[i])) {
+          numbers[lines[i]] = [];
+        }
+        else {
+          numbers[lines[i]].push(i+1);
+        }
+      }
+
+      let inpc = "";
+
+      for (let key of Object.keys(numbers)) {
+        if (numbers[key].length !== 0) {
+          let str_nums = [];
+          let int_nums = [parseInt(key), ...numbers[key]];
+        
+          for (let int_num of int_nums) {
+            str_nums.push(invTable[int_num + (file_index*64)]);
+          }
+          //console.log(str_nums);
+          inpc += str_nums.join("-");
+          inpc += "\n";
+        }
+      }
+      SSS += inpc;
+    }
+    setInputCorr(SSS);
   }
 
   function checkEditAda() {
@@ -285,6 +328,81 @@ function App() {
     setInputCorr(globalPorts.join("\n"));
   }
 
+  function backwardsEdit() {
+    setRadioBoxes(0);
+    setCheckRadioBoxes([]);
+    setFileContents([]);
+    setOutputAda("");
+    setOutputWriteableAda(false);
+
+    // Ask for file
+    let _input = document.createElement('input');
+    _input.type = 'file';
+    _input.onchange = function(){
+      var file = this.files[0];
+      var reader = new FileReader();
+      reader.onload = function(progressEvent){
+        setOutput(output + this.result + "\n");
+      };
+      reader.readAsText(file);
+    };
+    _input.click();
+
+    let invTable = {};
+    for (let key of Object.keys(table.table)) {
+      invTable[table.table[key]] = key;
+    }
+
+    let linesI = 0;
+    let numbers = {};
+    let index = 0;
+
+    for (let line of output.split("\n")) {
+      if (linesI <= 1) {
+        linesI += 1;
+        continue;
+      }
+
+      if (!Object.keys(numbers).includes(index)) {
+        numbers[index] = parseInt(line);
+      }
+
+      index += 1;
+      linesI += 1;
+    }
+
+    let groups = {};
+
+    for (let key of Object.keys(numbers)) {
+      if (parseInt(numbers[key]) !== parseInt(key)) {
+        if (String(numbers[key]) == "NaN") continue;
+
+        key = parseInt(key); 
+
+        if (Object.keys(groups).includes(numbers[key])) {
+          groups[numbers[key]].push(parseInt(key));
+        } 
+        else {
+          groups[numbers[key]] = [parseInt(parseInt(key))];
+        }        
+      }
+    }
+
+    let lines = [];
+
+    for (let key of Object.keys(groups)) {
+      let S = [key, ...groups[key]];
+
+      for (let i = 0; i < S.length; i++) {
+        S[i] = invTable[parseInt(S[i])];
+      }
+
+      lines.push(S.join("-"));
+    }
+
+    setInputCorr(lines.join("\n"));
+  }
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   return (
     <div className="App">
@@ -319,6 +437,7 @@ function App() {
             ))}</div>
             <button className="btn btn-block font-weight-bold btn-success" onClick={download}>Mentés</button>
             <button className="btn btn-block font-weight-bold btn-outline-info" onClick={checkEdit}>Módosítás</button>
+            <button className="btn btn-block font-weight-bold btn-outline-danger" onClick={backwardsEdit}>Visszafejtés</button>
           </div>
           <div className="col-sm">
             <h4>Adaptronic Teszterhez</h4>
